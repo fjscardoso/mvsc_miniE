@@ -19,9 +19,9 @@ init(Max) -> empty(Max).
 idle(List, Max) -> 
 	receive
 		{insert, Num, Ref, From} -> 
-				inserting(List, Max, Num, Ref, From);
+			inserting(List, Max, Num, Ref, From);
 		{remove, Ref, From} ->
-				removing(List, Max, Ref, From);
+			removing(List, Max, Ref, From);
 		{test, Pid} ->
 			Pid ! List,
 			idle(List,Max)
@@ -31,10 +31,9 @@ inserting(List, Max, Num, Ref, From) ->
 	io:format("inserting ~p~n", [Num]),
 	From ! {inserted, Num, Ref},
 	ExList = [Num|List],
-	if 
-	    length(ExList) == Max ->
+	if length(ExList) == Max ->
 			full(ExList, Max);
-	    length(ExList) < Max ->
+	   length(ExList) < Max ->
 			idle(ExList, Max)
 	end.
 
