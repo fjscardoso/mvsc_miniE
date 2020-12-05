@@ -2,7 +2,8 @@
 
 -compile(export_all).
 
-%-export([start/1, insert/1, remove/0]).
+%-----------TODO------------------
+%implementar o record buffer e a lista FIFO em vez de LIFO
 
 %-record(buffer, {[], max}).
 
@@ -30,7 +31,7 @@ idle(List, Max) ->
 inserting(List, Max, Num, Ref, From) ->
 	io:format("inserting ~p~n", [Num]),
 	From ! {inserted, Num, Ref},
-	ExList = [Num|List],
+	ExList = List++[Num],
 	if length(ExList) == Max ->
 			full(ExList, Max);
 	   length(ExList) < Max ->

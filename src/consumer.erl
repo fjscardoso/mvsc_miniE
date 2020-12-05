@@ -1,20 +1,26 @@
+
 -module(consumer).
 
 -compile(export_all).
 
-start(Server, Num) ->
-	spawn_link(?MODULE, init, [Server, Num]).
+start(Supv, Num) ->
+	spawn_link(?MODULE, init, [Supv, Num]).
 
-init(Server, Num) ->
-	Ref = erlang:monitor(process, Server),
-	consume(Server, Ref, Num).
+init(Supv, Num) ->
+	AuxRef = make_ref(),
+	Supv ! {where, AuxRef, self()},
+	receive
+		{AuxRef, Server} -> 
+			Ref = erlang:monitor(process, Server),
+			consume(Supv, Server, Ref, Num)
+	end.
 
-consume(_,_, 0) -> ok;
-consume(Server, Ref, Num) ->
+consume(_,_,Ref, 0) -> erlang:demonitor(Ref);
+consume(Supv, Server, Ref, Num) ->
 	Server ! {remove, Ref, self()},
 	receive 
 		{removed, _Rem, Ref} -> 
-			consume(Server,Ref,Num-1);
+			consume(Supv, Server,Ref,Num-1);
 		{'DOWN', Ref, process, _Pid, _Reason} ->
-			error
+			init(Supv, Num)
 	end.

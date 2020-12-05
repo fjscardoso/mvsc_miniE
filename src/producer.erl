@@ -2,19 +2,25 @@
 
 -compile(export_all).
 
-start(Server, Num) ->
-	spawn_link(?MODULE, init, [Server, Num]).
+start(Supv, Num) ->
+	spawn_link(?MODULE, init, [Supv, Num]).
 
-init(Server, Num) ->
-	Ref = erlang:monitor(process, Server),
-	produce(Server, Ref, Num).
+init(Supv, Num) ->
+	AuxRef = make_ref(),
+	Supv ! {where, AuxRef, self()},
+	receive
+		{AuxRef, Server} -> 
+			Ref = erlang:monitor(process, Server),
+			produce(Supv, Server, Ref, Num)
+	end.
 
-produce(_,_, 0) -> ok;
-produce(Server, Ref, Num) ->
+
+produce(_,_,Ref, 0) -> erlang:demonitor(Ref);
+produce(Supv, Server, Ref, Num) ->
 	Server ! {insert, Num, Ref, self()},
 	receive 
 		{inserted, Num, Ref} -> 
-			produce(Server,Ref,Num-1);
+			produce(Supv, Server,Ref,Num-1);
 		{'DOWN', Ref, process, _Pid, _Reason} ->
-			error
+			init(Supv, Num)
 	end.

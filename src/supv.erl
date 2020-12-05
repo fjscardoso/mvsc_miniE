@@ -8,14 +8,19 @@ start(Mod,Args) ->
 
 init({Mod,Args}) ->
 	process_flag(trap_exit, true),
-	loop({Mod,start_link,Args}).
+	start({Mod,Args}).
  
-loop({M,F,A}) ->
-	Pid = apply(M,F,A),
+start({M,A}) ->
+	Server = apply(M,start_link,A),
+	recieving(Server, {M,A}).
+
+recieving(Server,{M,A}) ->
 	receive
+		{where, Ref,From} -> From ! {Ref, Server},
+			recieving(Server, {M,A});
 		{'EXIT', _From, shutdown} ->
 			exit(shutdown); % will kill the child too
 		{'EXIT', Pid, Reason} ->
 			io:format("Process ~p exited for reason ~p~n",[Pid,Reason]),
-			loop({M,F,A})
+			start({M,A})	
 end.
