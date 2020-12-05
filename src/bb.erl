@@ -6,34 +6,30 @@
 
 %-record(buffer, {[], max}).
 
-start(Max) ->
-	register(?MODULE, Pid=spawn_link(?MODULE, init, [Max])),
-		Pid.
+%start(Max) ->
+%	register(?MODULE, Pid=spawn_link(?MODULE, init, [Max])),
+%		Pid.
+
+start_link(Max) ->
+    register(?MODULE, Pid=spawn_link(?MODULE, init, [Max])),
+    Pid.
 
 init(Max) -> empty(Max).
 
 idle(List, Max) -> 
 	receive
-		{insert, Num, From} -> 
-			if length(List) < Max ->
-				inserting(List, Max, Num, From);
-			length(List) >= Max ->
-				full(List, Max)
-			end;
-		{remove, From} ->
-			if List =/= [] ->
-				removing(List,Max, From);
-			List =:= [] ->
-				empty(Max)
-			end;
+		{insert, Num, Ref, From} -> 
+				inserting(List, Max, Num, Ref, From);
+		{remove, Ref, From} ->
+				removing(List, Max, Ref, From);
 		{test, Pid} ->
 			Pid ! List,
 			idle(List,Max)
 	end.
 
-inserting(List, Max, Num, From) ->
+inserting(List, Max, Num, Ref, From) ->
 	io:format("inserting ~p~n", [Num]),
-	From ! {inserted, Num},
+	From ! {inserted, Num, Ref},
 	ExList = [Num|List],
 	if 
 	    length(ExList) == Max ->
@@ -43,37 +39,32 @@ inserting(List, Max, Num, From) ->
 	end.
 
 
-removing([H|T], Max, From) ->
+removing([H|T], Max, Ref, From) ->
 	io:format("removing ~p~n", [H]),
-	From ! {removed, H},
-	if List =/= [] ->
-		removing(List,Max, From);
-	List =:= [] ->
+	From ! {removed, H, Ref},
+	if T =/= [] ->
+		idle(T,Max);
+	T =:= [] ->
 		empty(Max)
-	end;
-	idle(T, Max).
+	end.
 
 full(List, Max) ->
 	receive 
-		{remove, From} -> 
-			removing(List, Max, From)
+		{remove, Ref, From} -> 
+			removing(List, Max, Ref, From)
 	end.
 
 empty(Max) ->
 	receive
-		{insert, Num, Pid} ->
-			inserting([], Max, Num, Pid)
+		{insert, Num, Ref, Pid} ->
+			inserting([], Max, Num, Ref, Pid)
 	end.
 
 insert(Num) ->
-	?MODULE ! {insert, Num, self()}.
-	%receive
-	%	Msg -> Msg
-	%end.
+	?MODULE ! {insert, Num, make_ref(), self()}.
 
 remove() ->
-	?MODULE ! {remove, self()}.
-
+	?MODULE ! {remove, make_ref(), self()}.
 
 
 

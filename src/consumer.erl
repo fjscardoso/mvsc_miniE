@@ -1,4 +1,4 @@
--module(producer).
+-module(consumer).
 
 -compile(export_all).
 
@@ -7,14 +7,14 @@ start(Server, Num) ->
 
 init(Server, Num) ->
 	Ref = erlang:monitor(process, Server),
-	produce(Server, Ref, Num).
+	consume(Server, Ref, Num).
 
-produce(_,_, 0) -> ok;
-produce(Server, Ref, Num) ->
-	Server ! {insert, Num, Ref, self()},
+consume(_,_, 0) -> ok;
+consume(Server, Ref, Num) ->
+	Server ! {remove, Ref, self()},
 	receive 
-		{inserted, Num, Ref} -> 
-			produce(Server,Ref,Num-1);
+		{removed, _Rem, Ref} -> 
+			consume(Server,Ref,Num-1);
 		{'DOWN', Ref, process, _Pid, _Reason} ->
 			error
 	end.
