@@ -1,6 +1,5 @@
 -module(supv).
-
--compile(export_all).
+-export([start/2, init/1]).
 
 
 %% The supervisor process will be linked to the server

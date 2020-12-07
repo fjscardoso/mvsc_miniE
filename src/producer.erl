@@ -1,6 +1,6 @@
 -module(producer).
+-export([start/2, init/2]).
 
--compile(export_all).
 
 start(Supv, Num) ->
     spawn_link(?MODULE, init, [Supv, Num]).
