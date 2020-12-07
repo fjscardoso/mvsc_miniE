@@ -2,17 +2,13 @@
 
 -export([start/0, start/3, start/5]).
 
-%Start 3 producers and 2 consumers with 50 jobs to produce per producer and 75 jobs to consume per consumer
+%Start with buffer size 10, 3 producers and 2 consumers with 50 jobs to produce per producer and 75 jobs to consume per consumer
 start() ->
-    Sup = supv:start(bb, [10]),
-    startProducers(Sup, 3, 50),
-    startConsumers(Sup, 2, 75).
+    start(10, 3, 2, 50, 75).
 
 %Start 3 producers and 2 consumers with Producerjobs per producer and Consumerjobs per consumer
 start(Buffersize, Producerjobs, Consumerjobs) ->
-	Sup = supv:start(bb, [Buffersize]),
-    startProducers(Sup, 3, Producerjobs),
-    startConsumers(Sup, 2, Consumerjobs).
+	start(Buffersize, 3, 2, Producerjobs, Consumerjobs).
 
 %Start NProducers and NConsumers with ProducerJobs per producer and ConsumerJobs per consumer
 start(Buffersize, NProducers, NConsumers, Producerjobs, Consumerjobs) ->
